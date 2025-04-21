@@ -199,104 +199,104 @@ async function generateAIResponse(modelName, history) {
     console.error(`Error calling OpenAI API: ${error.message}`);
     return `[Error generating response from ${modelName}]`;
   }
-}story);
 }
+
 // Handle next conversation turn
 async function handleNextTurn() {
   if (!conversationActive) return;
-  Text,
+  
   const currentSpeaker = speakerSequence[currentSpeakerIndex];
   let messageText;
-   
-  try {   console.log(`[${messageObject.timestamp}] ${currentSpeaker}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`);
-    switch(currentSpeaker) {    conversationHistory.push(messageObject);
+  
+  try {
+    switch(currentSpeaker) {
       case 'System Log':
-        messageText = generateSystemLogMessage();ize
-        break;(conversationHistory.length > 100) {
-      case 'GPT-2':tionHistory = conversationHistory.slice(-50);
+        messageText = generateSystemLogMessage();
+        break;
+      case 'GPT-2':
         messageText = generateGPT2Response(conversationHistory);
         break;
-      default:ssageObject);
+      default:
+        messageText = await generateAIResponse(currentSpeaker, conversationHistory);
+    }
+    
+    const messageObject = {
+      source: currentSpeaker,
+      text: messageText,
+      timestamp: getTimestamp()
+    };
+    
+    console.log(`[${messageObject.timestamp}] ${currentSpeaker}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`);
+    conversationHistory.push(messageObject);
+    
+    // Keep history at a reasonable size
+    if (conversationHistory.length > 100) {
+      conversationHistory = conversationHistory.slice(-50);
+    }
+    
+    io.emit('newMessage', messageObject);
+    
+    // Move to next speaker
     currentSpeakerIndex = (currentSpeakerIndex + 1) % speakerSequence.length;
-    Move to next speaker
-    // Schedule next turn with random delay between 3-8 secondsndex = (currentSpeakerIndex + 1) % speakerSequence.length;
+    
+    // Schedule next turn with random delay between 3-8 seconds
     const delay = Math.floor(Math.random() * 5000) + 3000;
-    setTimeout(handleNextTurn, delay); // Schedule next turn with random delay between 3-8 seconds
-  } catch (error) { const delay = Math.floor(Math.random() * 5000) + 3000;
-    console.error('Error in conversation turn:', error);    setTimeout(handleNextTurn, delay);
+    setTimeout(handleNextTurn, delay);
+  } catch (error) {
+    console.error('Error in conversation turn:', error);
     setTimeout(handleNextTurn, 5000); // Try again after 5 seconds on error
   }
-}    setTimeout(handleNextTurn, 5000); // Try again after 5 seconds on error
+}
 
 // Endpoint to get current API usage
 app.get('/api-usage', (req, res) => {
-  try { Endpoint to get current API usage
+  try {
     res.json({
       count: apiCounter.count,
-      limit: API_CALL_LIMIT,  res.json({
+      limit: API_CALL_LIMIT,
       date: apiCounter.date,
       remainingCalls: Math.max(0, API_CALL_LIMIT - apiCounter.count)
     });
-  } catch (error) {API_CALL_LIMIT - apiCounter.count)
-    res.status(500).json({ error: 'Error retrieving API usage data' });});
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving API usage data' });
   }
-});rror: 'Error retrieving API usage data' });
+});
 
 // Serve static frontend files from the ../frontend directory
 app.use(express.static(path.join(__dirname, '../frontend')));
-ve static frontend files from the ../frontend directory
-// Socket.IO connection handlinguse(express.static(path.join(__dirname, '../frontend')));
+
+// Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('Client connected');
-  n('connection', (socket) => {
+  
   // Send existing conversation history to new client
   socket.emit('initialHistory', conversationHistory);
-  / Send existing conversation history to new client
-  // Start conversation if not already active  socket.emit('initialHistory', conversationHistory);
+  
+  // Start conversation if not already active
   if (!conversationActive) {
-    conversationActive = true;not already active
+    conversationActive = true;
     sessionStartTime = Date.now();
-    rue;
+    
     // Add initial system log message
     const initialMessage = {
-      source: 'System Log', // Add initial system log message
-      text: 'Connection established to backrooms server. AI model conversation initialized.',    const initialMessage = {
+      source: 'System Log',
+      text: 'Connection established to backrooms server. AI model conversation initialized.',
       timestamp: getTimestamp()
-    };shed to backrooms server. AI model conversation initialized.',
+    };
     
-    conversationHistory.push(initialMessage); };
-    io.emit('newMessage', initialMessage);    
+    conversationHistory.push(initialMessage);
+    io.emit('newMessage', initialMessage);
     
-    // Start the conversation loopitialMessage);
+    // Start the conversation loop
     setTimeout(handleNextTurn, 2000);
-  } // Start the conversation loop
-    setTimeout(handleNextTurn, 2000);
+  }
+
   // Send API usage info to client
   socket.emit('apiUsage', {
-    count: apiCounter.count, client
+    count: apiCounter.count,
     limit: API_CALL_LIMIT,
     remaining: Math.max(0, API_CALL_LIMIT - apiCounter.count)
-  }); limit: API_CALL_LIMIT,
-});    remaining: Math.max(0, API_CALL_LIMIT - apiCounter.count)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-});  console.log(`API calls for today (${apiCounter.date}): ${apiCounter.count}/${API_CALL_LIMIT}`);  console.log(`Server running on port ${PORT}`);server.listen(PORT, () => {const PORT = process.env.PORT || 3001;// Start the server});  res.sendFile(path.join(__dirname, '../frontend/index.html'));app.get('*', (req, res) => {// Serve the frontend for all other GET requests});  res.send('GPT Backrooms Server Running');app.get('/api', (req, res) => {// Basic route for testing API  });
+  });
 });
 
 // Basic route for testing API
