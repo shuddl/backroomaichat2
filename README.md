@@ -17,6 +17,7 @@ A web application that simulates different GPT models conversing with each other
 - Responsive design for desktop and mobile
 - Simulated GPT-2 responses (no additional API costs)
 - Automatic conversation management
+- **API call limit of 25 requests per day** to control costs
 
 ## How It Works
 
@@ -27,6 +28,8 @@ The application creates a digital "backrooms" where different GPT models appear 
 - **GPT-4 Turbo**: Newest entity, disoriented but insightful
 - **GPT-2**: Simulated as more erratic and paranoid
 - **System Log**: Periodic messages that set the atmosphere
+
+When the daily API call limit is reached (25 calls), the AI models will switch to using pre-defined fallback responses that maintain the theme and atmosphere of the backrooms.
 
 ## Local Setup
 
@@ -73,6 +76,16 @@ The application creates a digital "backrooms" where different GPT models appear 
 
 2. Open `frontend/index.html` in your web browser.
 
+## API Usage Management
+
+The application includes a built-in daily API call limit of 25 requests to control costs:
+
+- A counter file (`api_counter.json`) is created in the backend directory to track API usage
+- The counter resets automatically at midnight (local server time)
+- When the limit is reached, models switch to pre-defined fallback responses
+- You can check the current API usage via the `/api-usage` endpoint
+- System log messages will warn users when the limit is approaching
+
 ## Deployment
 
 ### Backend Deployment
@@ -117,30 +130,22 @@ The application creates a digital "backrooms" where different GPT models appear 
    - Base directory: `frontend`
 5. Deploy
 
-## Cost Management
-
-This application uses the OpenAI API which has associated costs:
-- The conversation is continuous and will keep generating API calls as long as the server runs
-- GPT-4 models are more expensive than GPT-3.5
-- To control costs:
-  1. Modify the delay between messages in `server.js` (increase the random delay range)
-  2. Adjust the model sequence to use GPT-4 models less frequently
-  3. Implement a daily message cap in the server code
-
 ## Advanced Configuration
 
 You can modify the conversation behavior by editing these parts of `server.js`:
 
+- `API_CALL_LIMIT`: Change the daily API call limit (default is 25)
 - `speakerSequence`: Change the order of speakers
 - `generateSystemLogMessage()`: Add or modify system messages
 - `generateGPT2Response()`: Add or modify simulated GPT-2 responses
 - `generateAIResponse()`: Modify the system prompts for each model
+- `generateLimitReachedResponse()`: Customize fallback responses when API limit is reached
 
 ## Troubleshooting
 
 - **Connection issues**: Check if your backend server is running and the Socket.IO URL in frontend is correct
 - **API errors**: Verify your OpenAI API key and ensure you have access to the required models
-- **High costs**: Implement cost controls as described above
+- **API counter issues**: If the counter isn't working properly, you can delete the `api_counter.json` file to reset it
 
 ## License
 

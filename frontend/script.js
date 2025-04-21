@@ -66,6 +66,37 @@ socket.on('newMessage', (message) => {
     appendMessage(messageElement);
 });
 
+// Handle API usage information
+socket.on('apiUsage', (usage) => {
+    console.log(`API Usage: ${usage.count}/${usage.limit} calls used today (${usage.remaining} remaining)`);
+    
+    // Add API limit info to the page title if limit is approaching
+    if (usage.remaining < 5) {
+        document.title = `GPT Backrooms (${usage.remaining} API calls left)`;
+    }
+    
+    // Add a system message if we're close to the limit
+    if (usage.remaining === 3) {
+        const warningMessage = {
+            source: 'System Log',
+            text: 'Warning: API call limit approaching. Communication may become limited soon.',
+            timestamp: 'SYSTEM'
+        };
+        const messageElement = createMessageElement(warningMessage);
+        appendMessage(messageElement);
+    }
+    
+    if (usage.remaining === 0) {
+        const limitMessage = {
+            source: 'System Log',
+            text: 'Notice: Daily API call limit reached. Models will use fallback responses until tomorrow.',
+            timestamp: 'SYSTEM'
+        };
+        const messageElement = createMessageElement(limitMessage);
+        appendMessage(messageElement);
+    }
+});
+
 // Handle connection errors
 socket.on('connect_error', (error) => {
     console.error('Connection error:', error);

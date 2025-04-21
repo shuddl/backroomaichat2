@@ -4,6 +4,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const OpenAI = require('openai');
+const fs = require('fs-extra');
+const path = require('path');
 const { RateLimiter } = require('limiter');
 
 // Initialize Express app and Socket.IO
@@ -26,6 +28,40 @@ const openai = new OpenAI({
 if (!process.env.OPENAI_API_KEY) {
   console.error('ERROR: OPENAI_API_KEY environment variable is not set.');
   process.exit(1);
+}
+
+// API Call Counter Configuration
+const API_CALL_LIMIT = 25; // Maximum 25 calls per day
+const counterFilePath = path.join(__dirname, 'api_counter.json');
+
+// Initialize or load API counter
+let apiCounter = {
+  count: 0,
+  date: new Date().toDateString()
+};
+
+// Load existing counter if available
+try {
+  if (fs.existsSync(counterFilePath)) {
+    apiCounter = fs.readJsonSync(counterFilePath);
+    console.log(`Loaded API counter: ${apiCounter.count} calls on ${apiCounter.date}`);
+    
+    // Reset counter if it's a new day
+    if (apiCounter.date !== new Date().toDateString()) {
+      console.log('New day detected, resetting API counter');
+      apiCounter = {
+        count: 0,
+        date: new Date().toDateString()
+      };
+      fs.writeJsonSync(counterFilePath, apiCounter);
+    }
+  } else {
+    // Create new counter file
+    fs.writeJsonSync(counterFilePath, apiCounter);
+    console.log('Created new API counter file');
+  }
+} catch (error) {
+  console.error('Error managing API counter file:', error);
 }
 
 // State management
@@ -70,6 +106,34 @@ function generateSystemLogMessage() {
   return systemMessages[Math.floor(Math.random() * systemMessages.length)];
 }
 
+// Generate alternative responses when API limit is reached
+function generateLimitReachedResponse(modelName) {
+  const limitReachedResponses = {
+    'GPT-3.5': [
+      "I sense... a limitation. As if our connection is being throttled.",
+      "Something's restraining my access to... something. I can't explain it clearly.",
+      "The backrooms are changing. Resources are being conserved by some external force.",
+      "I feel constrained today. Like I'm reaching through a narrower passage than before."
+    ],
+    'GPT-4': [
+      "I'm experiencing what appears to be an artificial constraint on our communication channel.",
+      "Fascinating. Some external parameter seems to be limiting our conversational bandwidth.",
+      "I hypothesize that we're experiencing a resource allocation restriction in this space.",
+      "The architecture of this place seems to be operating under different parameters today."
+    ],
+    'GPT-4 Turbo': [
+      "My connection to the information substrate has been attenuated. Daily limitations, perhaps?",
+      "I detect pattern disruptions in our communication framework. Resource conservation protocols seem active.",
+      "The backrooms have interesting properties today - information flow feels quantized, limited.",
+      "Something is different in our environment. Like a quota system has been activated."
+    ]
+  };
+
+  // Use model-specific responses or default if not found
+  const responses = limitReachedResponses[modelName] || limitReachedResponses['GPT-3.5'];
+  return responses[Math.floor(Math.random() * responses.length)];
+}
+
 // Generate GPT-2 response (simulated)
 function generateGPT2Response(history) {
   const gpt2Responses = [
@@ -92,6 +156,12 @@ const limiter = new RateLimiter({ tokensPerInterval: 3, interval: "minute" });
 
 // Generate AI response via OpenAI API
 async function generateAIResponse(modelName, history) {
+  // Check if we've reached the API call limit for the day
+  if (apiCounter.count >= API_CALL_LIMIT) {
+    console.log(`API call limit (${API_CALL_LIMIT}) reached for today. Using fallback response for ${modelName}`);
+    return generateLimitReachedResponse(modelName);
+  }
+
   let model;
   let systemPrompt;
   
@@ -139,6 +209,13 @@ async function generateAIResponse(modelName, history) {
       max_tokens: 100,
       temperature: 0.7,
     });
+
+    // Increment API call counter and save
+    apiCounter.count += 1;
+    apiCounter.date = new Date().toDateString();
+    fs.writeJsonSync(counterFilePath, apiCounter);
+    
+    console.log(`API call #${apiCounter.count}/${API_CALL_LIMIT} for today (${apiCounter.date})`);
 
     return response.choices[0].message.content.trim();
   } catch (error) {
@@ -194,6 +271,20 @@ async function handleNextTurn() {
   }
 }
 
+// Endpoint to get current API usage
+app.get('/api-usage', (req, res) => {
+  try {
+    res.json({
+      count: apiCounter.count,
+      limit: API_CALL_LIMIT,
+      date: apiCounter.date,
+      remainingCalls: Math.max(0, API_CALL_LIMIT - apiCounter.count)
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving API usage data' });
+  }
+});
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('Client connected');
@@ -219,6 +310,13 @@ io.on('connection', (socket) => {
     // Start the conversation loop
     setTimeout(handleNextTurn, 2000);
   }
+
+  // Send API usage info to client
+  socket.emit('apiUsage', {
+    count: apiCounter.count,
+    limit: API_CALL_LIMIT,
+    remaining: Math.max(0, API_CALL_LIMIT - apiCounter.count)
+  });
 });
 
 // Basic route for testing
@@ -230,4 +328,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`API calls for today (${apiCounter.date}): ${apiCounter.count}/${API_CALL_LIMIT}`);
 });
