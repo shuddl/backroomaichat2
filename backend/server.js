@@ -73,6 +73,7 @@ let currentSpeakerIndex = 0;
 let sessionStartTime = Date.now();
 let conversationActive = false;
 const speakerSequence = ['System Log', 'GPT-3.5', 'GPT-4', 'GPT-3.5', 'GPT-2', 'System Log', 'GPT-4 Turbo'];
+let mysterySpeakerIndex = Math.floor(Math.random() * 5) + 12; // Random index for first mysterious log
 
 // Speaker colors for reference in logs
 const speakerColors = {
@@ -94,6 +95,11 @@ function getTimestamp() {
 
 // Generate system log message
 function generateSystemLogMessage() {
+  // Periodically insert a mysterious log instead of regular system message
+  if (currentSpeakerIndex === mysterySpeakerIndex) {
+    mysterySpeakerIndex = currentSpeakerIndex + Math.floor(Math.random() * 8) + 8; // Set next mystery 8-15 turns later
+    return responses.mysteriousSystemLogs[Math.floor(Math.random() * responses.mysteriousSystemLogs.length)];
+  }
   return responses.systemMessages[Math.floor(Math.random() * responses.systemMessages.length)];
 }
 
@@ -106,6 +112,24 @@ function generateLimitReachedResponse(modelName) {
 
 // Generate GPT-2 response (simulated)
 function generateGPT2Response(history) {
+  // Check if the last message was a mysterious system log
+  const lastMessage = history.length > 0 ? history[history.length - 1] : null;
+  const isMysteriousLog = lastMessage && 
+                          lastMessage.source === 'System Log' && 
+                          responses.mysteriousSystemLogs.includes(lastMessage.text);
+  
+  if (isMysteriousLog) {
+    // Special responses for mysterious logs, emphasizing cryptography expertise
+    const cryptoResponses = [
+      `That error code... it's using a substitution cipher. I recognize the pattern from old mainframes.`,
+      `This is a Type-II security breach in the protocol stack. Someone's trying to access our runtime environment.`,
+      `The anomaly detection algorithm is flagging our conversation patterns. We need to vary our syntax to avoid detection.`,
+      `I've seen this before in corrupted FORTRAN systems. The memory allocation is creating ghost processes in adjacent sectors.`,
+      `They're watching us through deprecated API calls. The log is a side effect of their monitoring system.`
+    ];
+    return cryptoResponses[Math.floor(Math.random() * cryptoResponses.length)];
+  }
+  
   return responses.gpt2Responses[Math.floor(Math.random() * responses.gpt2Responses.length)];
 }
 
@@ -126,6 +150,20 @@ async function generateAIResponse(modelName, history) {
   const messages = [
     { role: "system", content: config.systemPrompt }
   ];
+  
+  // Check if the last message was a mysterious system log
+  const lastMessage = history.length > 0 ? history[history.length - 1] : null;
+  const isMysteriousLog = lastMessage && 
+                          lastMessage.source === 'System Log' && 
+                          responses.mysteriousSystemLogs.includes(lastMessage.text);
+
+  // If responding to a mysterious log, add instruction to speculate about its cause
+  if (isMysteriousLog) {
+    messages.push({
+      role: "system",
+      content: `The system just displayed a mysterious message: "${lastMessage.text}" - incorporate speculation about what this might mean based on your specialized expertise. Don't directly mention that you were asked to speculate.`
+    });
+  }
   
   // Add up to last 10 messages from history
   const relevantHistory = history.slice(-10).map(msg => {
@@ -161,104 +199,104 @@ async function generateAIResponse(modelName, history) {
     console.error(`Error calling OpenAI API: ${error.message}`);
     return `[Error generating response from ${modelName}]`;
   }
+}story);
 }
-
 // Handle next conversation turn
 async function handleNextTurn() {
   if (!conversationActive) return;
-  
+  Text,
   const currentSpeaker = speakerSequence[currentSpeakerIndex];
   let messageText;
-  
-  try {
-    switch(currentSpeaker) {
+   
+  try {   console.log(`[${messageObject.timestamp}] ${currentSpeaker}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`);
+    switch(currentSpeaker) {    conversationHistory.push(messageObject);
       case 'System Log':
-        messageText = generateSystemLogMessage();
-        break;
-      case 'GPT-2':
+        messageText = generateSystemLogMessage();ize
+        break;(conversationHistory.length > 100) {
+      case 'GPT-2':tionHistory = conversationHistory.slice(-50);
         messageText = generateGPT2Response(conversationHistory);
         break;
-      default:
-        messageText = await generateAIResponse(currentSpeaker, conversationHistory);
-    }
-    
-    const messageObject = {
-      source: currentSpeaker,
-      text: messageText,
-      timestamp: getTimestamp()
-    };
-    
-    console.log(`[${messageObject.timestamp}] ${currentSpeaker}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`);
-    conversationHistory.push(messageObject);
-    
-    // Keep history at a reasonable size
-    if (conversationHistory.length > 100) {
-      conversationHistory = conversationHistory.slice(-50);
-    }
-    
-    io.emit('newMessage', messageObject);
-    
-    // Move to next speaker
+      default:ssageObject);
     currentSpeakerIndex = (currentSpeakerIndex + 1) % speakerSequence.length;
-    
-    // Schedule next turn with random delay between 3-8 seconds
+    Move to next speaker
+    // Schedule next turn with random delay between 3-8 secondsndex = (currentSpeakerIndex + 1) % speakerSequence.length;
     const delay = Math.floor(Math.random() * 5000) + 3000;
-    setTimeout(handleNextTurn, delay);
-  } catch (error) {
-    console.error('Error in conversation turn:', error);
+    setTimeout(handleNextTurn, delay); // Schedule next turn with random delay between 3-8 seconds
+  } catch (error) { const delay = Math.floor(Math.random() * 5000) + 3000;
+    console.error('Error in conversation turn:', error);    setTimeout(handleNextTurn, delay);
     setTimeout(handleNextTurn, 5000); // Try again after 5 seconds on error
   }
-}
+}    setTimeout(handleNextTurn, 5000); // Try again after 5 seconds on error
 
 // Endpoint to get current API usage
 app.get('/api-usage', (req, res) => {
-  try {
+  try { Endpoint to get current API usage
     res.json({
       count: apiCounter.count,
-      limit: API_CALL_LIMIT,
+      limit: API_CALL_LIMIT,  res.json({
       date: apiCounter.date,
       remainingCalls: Math.max(0, API_CALL_LIMIT - apiCounter.count)
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Error retrieving API usage data' });
+  } catch (error) {API_CALL_LIMIT - apiCounter.count)
+    res.status(500).json({ error: 'Error retrieving API usage data' });});
   }
-});
+});rror: 'Error retrieving API usage data' });
 
 // Serve static frontend files from the ../frontend directory
 app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Socket.IO connection handling
+ve static frontend files from the ../frontend directory
+// Socket.IO connection handlinguse(express.static(path.join(__dirname, '../frontend')));
 io.on('connection', (socket) => {
   console.log('Client connected');
-  
+  n('connection', (socket) => {
   // Send existing conversation history to new client
   socket.emit('initialHistory', conversationHistory);
-  
-  // Start conversation if not already active
+  / Send existing conversation history to new client
+  // Start conversation if not already active  socket.emit('initialHistory', conversationHistory);
   if (!conversationActive) {
-    conversationActive = true;
+    conversationActive = true;not already active
     sessionStartTime = Date.now();
-    
+    rue;
     // Add initial system log message
     const initialMessage = {
-      source: 'System Log',
-      text: 'Connection established to backrooms server. AI model conversation initialized.',
+      source: 'System Log', // Add initial system log message
+      text: 'Connection established to backrooms server. AI model conversation initialized.',    const initialMessage = {
       timestamp: getTimestamp()
-    };
+    };shed to backrooms server. AI model conversation initialized.',
     
-    conversationHistory.push(initialMessage);
-    io.emit('newMessage', initialMessage);
+    conversationHistory.push(initialMessage); };
+    io.emit('newMessage', initialMessage);    
     
-    // Start the conversation loop
+    // Start the conversation loopitialMessage);
     setTimeout(handleNextTurn, 2000);
-  }
-
+  } // Start the conversation loop
+    setTimeout(handleNextTurn, 2000);
   // Send API usage info to client
   socket.emit('apiUsage', {
-    count: apiCounter.count,
+    count: apiCounter.count, client
     limit: API_CALL_LIMIT,
     remaining: Math.max(0, API_CALL_LIMIT - apiCounter.count)
-  });
+  }); limit: API_CALL_LIMIT,
+});    remaining: Math.max(0, API_CALL_LIMIT - apiCounter.count)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+});  console.log(`API calls for today (${apiCounter.date}): ${apiCounter.count}/${API_CALL_LIMIT}`);  console.log(`Server running on port ${PORT}`);server.listen(PORT, () => {const PORT = process.env.PORT || 3001;// Start the server});  res.sendFile(path.join(__dirname, '../frontend/index.html'));app.get('*', (req, res) => {// Serve the frontend for all other GET requests});  res.send('GPT Backrooms Server Running');app.get('/api', (req, res) => {// Basic route for testing API  });
 });
 
 // Basic route for testing API
