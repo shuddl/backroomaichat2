@@ -1,5 +1,7 @@
 // Connect to backend server with reconnection options
-const socket = io('http://localhost:3001', {
+const socket = io(window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001' 
+  : window.location.origin, {
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,

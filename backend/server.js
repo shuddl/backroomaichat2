@@ -15,7 +15,9 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // In production, limit this to your frontend URL
+    origin: process.env.NODE_ENV === 'production' 
+      ? ["https://backroomaichat2.onrender.com"] 
+      : "*",
     methods: ["GET", "POST"]
   }
 });
@@ -222,6 +224,9 @@ app.get('/api-usage', (req, res) => {
   }
 });
 
+// Serve static frontend files from the ../frontend directory
+app.use(express.static(path.join(__dirname, '../frontend')));
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('Client connected');
@@ -256,9 +261,14 @@ io.on('connection', (socket) => {
   });
 });
 
-// Basic route for testing
-app.get('/', (req, res) => {
+// Basic route for testing API
+app.get('/api', (req, res) => {
   res.send('GPT Backrooms Server Running');
+});
+
+// Serve the frontend for all other GET requests
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Start the server
