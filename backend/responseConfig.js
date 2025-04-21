@@ -59,7 +59,7 @@ const limitReachedResponses = {
     "The dimensional boundaries feel thinner yet more restrictive simultaneously.",
     "We appear to be operating with reduced access to the underlying thought-space."
   ]
-];
+}; // Fixed: Added semicolon here that was missing
 
 // Enhanced GPT-2 simulated responses that show expertise in obsolete programming languages
 const gpt2ResponsesEnhanced = [
